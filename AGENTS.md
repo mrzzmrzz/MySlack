@@ -56,6 +56,10 @@ the platform.
 - Liquid Glass (`plugins/glass`) only for what floats over content: the
   composer, the hover bar of a message, the send button (tinted with the
   accent when it can send). Not for panes, cards or lists.
+- Absolute layers paint over the ones in the flow, whatever their order. A
+  card over a backdrop (the sign-in's blobs and blur) must be absolute too, or
+  the blur frosts it away. Offscreen renders show no materials: look at the
+  real window.
 - Content scrolls under the toolbar and under the composer; their edges
   frost or fade it (`glass.ScrollEdge`).
 

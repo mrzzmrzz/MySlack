@@ -132,7 +132,9 @@ func (a *app) signInView(c *ui.Context) {
 		})
 		ui.Box(c).Absolute().Top(0).Left(0).Right(0).Bottom(0).PassThrough().Material(glass.Blur{Radius: 40})
 		ui.Box(c).Absolute().Top(0).Left(0).Right(0).Height(titleBarHeight).DragWindow()
-		ui.Column(c).Fill().Center().Children(func() {
+		// Absolute too: absolute layers paint over those in the flow, and the blur
+		// above would otherwise frost the card away.
+		ui.Column(c).Absolute().Top(0).Left(0).Right(0).Bottom(0).Center().Children(func() {
 			ui.Column(c).Width(400).Padding(32, 32, 28).Gap(14).AlignItems(ui.Center).Radius(26).
 				Material(glass.Glass{}).Children(func() {
 				ui.Image(c, appIcon).Size(72, 72)

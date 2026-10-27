@@ -76,6 +76,10 @@ type app struct {
 	settingsWin *mygo.Window
 	settingsTab int
 
+	// The profile shown, under the avatar of the message at profileAt.
+	profileAt   string
+	profileOpen bool
+
 	// The emoji picker, open on the message picking.
 	picking     string
 	pickerOpen  bool
@@ -258,7 +262,7 @@ func (a *app) name(id string) string {
 	return ""
 }
 
-func (a *app) author(m *slack.Message) string {
+func (a *app) authorName(m *slack.Message) string {
 	switch {
 	case m.User != "":
 		if n := a.name(m.User); n != "" {
@@ -607,7 +611,7 @@ func (a *app) notify(ch *channel, m *slack.Message) {
 		subtitle = ""
 	}
 	n := mygo.NewNotification(mygo.NotificationOptions{
-		Title:    a.author(m),
+		Title:    a.authorName(m),
 		Subtitle: subtitle,
 		Body:     slack.PlainText(m.Body(), a.name),
 		Group:    ch.ID,

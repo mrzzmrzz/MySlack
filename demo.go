@@ -17,10 +17,13 @@ func (a *app) loadDemo(mode string) {
 		"U00": "Alex Chen", "U01": "Ada Lovelace", "U02": "Grace Hopper", "U03": "Linus Park",
 		"U04": "Margaret Hamilton", "U05": "Katherine Johnson", "U06": "Dennis Ritchie",
 	} {
-		u := &slack.User{ID: id, Name: name}
+		u := &slack.User{ID: id, Name: name, TZ: "America/Los_Angeles"}
 		u.Profile.DisplayName = name
 		a.users[id] = u
 	}
+	a.users["U03"].Profile.Title, a.users["U03"].TZ = "Release engineer", "Europe/Berlin"
+	a.users["U03"].Profile.StatusEmoji, a.users["U03"].Profile.StatusText = ":rocket:", "Shipping v0.2"
+	a.users["U04"].Profile.Title = "Build systems"
 	add := func(ch slack.Channel, topic string, unread bool, ms ...slack.Message) *channel {
 		ch.Topic.Value = topic
 		c := &channel{Channel: ch, loaded: true, unread: unread, messages: ms}

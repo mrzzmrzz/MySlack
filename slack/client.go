@@ -265,7 +265,13 @@ type User struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
 	Deleted bool   `json:"deleted"`
+	IsBot   bool   `json:"is_bot"`
+	TZ      string `json:"tz"` // the user's time zone, as "Asia/Shanghai"
 	Profile struct {
+		Title       string `json:"title"`
+		StatusText  string `json:"status_text"`
+		StatusEmoji string `json:"status_emoji"`
+		Image192    string `json:"image_192"`
 		DisplayName string `json:"display_name"`
 		RealName    string `json:"real_name"`
 		Image72     string `json:"image_72"`
@@ -281,6 +287,14 @@ func (u *User) Photo() string {
 		return ""
 	}
 	return u.Profile.Image72
+}
+
+// LargePhoto is Photo at 192 pixels, for a profile.
+func (u *User) LargePhoto() string {
+	if !u.Profile.IsCustomImage {
+		return ""
+	}
+	return u.Profile.Image192
 }
 
 // Label is the name Slack shows for the user.
@@ -426,4 +440,17 @@ func (c *Client) Download(ctx context.Context, u, path string, progress func(don
 		return err
 	}
 	return os.Rename(part, path)
+}
+
+// OpenIM opens the direct conversation with a user, starting it if there
+// is none yet.
+func (c *Client) OpenIM(ctx context.Context, user string) (*Channel, error) {
+	var r struct {
+		Channel Channel `json:"channel"`
+	}
+	if err := c.call(ctx, "conversations.open", url.Values{"users": {user}, "return_im": {"true"}}, &r); err != nil {
+		return nil, err
+	}
+	r.Channel.IsIM, r.Channel.User = true, user
+	return &r.Channel, nil
 }

@@ -31,6 +31,8 @@ Measured with `footprint` and `top`. Memory grows with the channels opened
 - Real-time updates over Slack's socket: new messages, edits, deletions,
   replies and reactions
 - Threads in an inspector beside the channel
+- Profiles: click an avatar or a name for the person's title, status and
+  local time, and to write to them
 - Reactions: add any emoji from a searchable picker, toggle them in place
 - Files: download to Downloads with progress, open or reveal in Finder;
   pictures as thumbnails that open in Preview

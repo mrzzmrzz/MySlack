@@ -106,3 +106,32 @@ func TestChrome(t *testing.T) {
 		t.Error("Escape left the thread open")
 	}
 }
+
+// An author's profile shows their title, and its button opens the direct
+// conversation with them.
+func TestProfile(t *testing.T) {
+	a := newApp()
+	a.auth = &slack.Auth{UserID: "U0"}
+	ada := &slack.User{ID: "U1", Name: "ada", TZ: "Europe/London"}
+	ada.Profile.Title = "Analyst"
+	a.users["U1"] = ada
+	a.channels["C1"] = &channel{Channel: slack.Channel{ID: "C1", Name: "general"}, loaded: true,
+		messages: []slack.Message{{User: "U1", Text: "hi", TS: "1.1"}}}
+	a.channels["D1"] = &channel{Channel: slack.Channel{ID: "D1", IsIM: true, User: "U1"}, loaded: true}
+	a.selected = "C1"
+	tt := ui.NewTester(a.view, 1000, 700)
+	// The sidebar has an "ada" too: open the message's profile as its
+	// avatar's click does.
+	a.profileAt, a.profileOpen = "true1.1", true
+	tt.Frame()
+	tt.Frame()
+	if !tt.HasText("Analyst") || !tt.HasText("发消息") {
+		t.Fatalf("no profile in %q", tt.Texts())
+	}
+	if err := tt.Click("发消息"); err != nil {
+		t.Fatal(err)
+	}
+	if a.selected != "D1" || a.profileOpen {
+		t.Errorf("selected %q, profile open %v", a.selected, a.profileOpen)
+	}
+}

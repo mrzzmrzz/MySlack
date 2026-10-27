@@ -484,6 +484,7 @@ func (a *app) threadPane(c *ui.Context) {
 func (a *app) message(c *ui.Context, ch *channel, ms []slack.Message, i int, threads bool) {
 	t := c.Theme()
 	m := &ms[i]
+	key := fmt.Sprint(threads, m.TS) // the channel's and the thread's apart
 	newDay := i == 0 || !sameDay(ms[i-1].Time(), m.Time())
 	grouped := !newDay && ms[i-1].User == m.User && m.User != "" && !notice(&ms[i-1]) &&
 		m.Time().Sub(ms[i-1].Time()) < 5*time.Minute
@@ -526,12 +527,12 @@ func (a *app) message(c *ui.Context, ch *channel, ms []slack.Message, i int, thr
 				}
 				ui.Text(c, label).FontSize(10).TextColor(t.TextMuted).Width(size).TextAlign(ui.End).Padding(4, 0, 0)
 			} else {
-				avatar(c, a.author(m), a.picture(a.avatarURL(m)), size)
+				a.person(c, m, key, size, true)
 			}
 			ui.Column(c).Grow(1).MinWidth(0).Gap(4).Children(func() {
 				if !grouped {
 					ui.Row(c).Gap(8).AlignItems(ui.Baseline).Children(func() {
-						ui.Text(c, a.author(m)).FontWeight(600)
+						a.person(c, m, key, size, false)
 						ui.Text(c, m.Time().Format("15:04")).FontSize(11).TextColor(t.TextMuted)
 					})
 				}

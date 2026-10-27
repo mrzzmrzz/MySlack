@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # the release, and the disk image uploaded to it
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Check the tag against mygo.json
+        run: |
+          version="$(jq -r .version mygo.json)"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match version $version in mygo.json"
+            exit 1
+          fi
+
+      # Signing and notarization run when the secrets are set; without
+      # them the app is signed ad hoc, which Gatekeeper asks about.
+      - name: Import the Developer ID certificate and the notary key
+        id: signing
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE_BASE64" ] || [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            echo "No signing secrets: the app is signed ad hoc."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(openssl rand -base64 24)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain"
+          security list-keychains -d user -s "$keychain" login.keychain
+
+          notarize=null
+          if [ -n "$APPLE_NOTARY_KEY" ]; then
+            # The key is the .p8 file itself, or the file in base64.
+            key="$RUNNER_TEMP/AuthKey.p8"
+            case "$APPLE_NOTARY_KEY" in
+              -----BEGIN*) printf '%s\n' "$APPLE_NOTARY_KEY" > "$key" ;;
+              *) echo "$APPLE_NOTARY_KEY" | base64 --decode > "$key" ;;
+            esac
+            xcrun notarytool store-credentials notary --keychain "$keychain" \
+              --key "$key" --key-id "$APPLE_NOTARY_KEY_ID" --issuer "$APPLE_NOTARY_ISSUER_ID"
+            rm "$key"
+            notarize="{\"keychainProfile\":\"notary\",\"keychain\":\"$keychain\"}"
+          fi
+          # mygo.json takes no environment, so the build gets a copy that signs.
+          jq --arg id "$APPLE_SIGNING_IDENTITY" --argjson notarize "$notarize" \
+            '.macos = ({signingIdentity: $id} + (if $notarize then {notarize: $notarize} else {} end))' \
+            mygo.json > mygo.signed.json
+          mv mygo.signed.json mygo.json
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build the disk image
+        run: go tool mygo build -platform darwin/universal
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dmg="$(ls build/darwin-universal/*.dmg)"
+          gh release create "$GITHUB_REF_NAME" "$dmg" --title "Slack-MyGo $GITHUB_REF_NAME" --generate-notes \
+            || gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber

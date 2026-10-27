@@ -12,6 +12,8 @@ import (
 	"github.com/egoist/mygo/ui/markdown"
 
 	"github.com/mrzzmrzz/MySlack/slack"
+
+	"github.com/mrzzmrzz/MySlack/locales"
 )
 
 // The window follows macOS 27: a sidebar of the system's material along
@@ -91,9 +93,9 @@ func (a *app) view(c *ui.Context) {
 
 	// The sidebar's button sits beside the traffic lights, whether the
 	// sidebar shows or not.
-	label := "隐藏边栏"
+	label := locales.HideSidebar()
 	if a.sidebarHidden {
-		label = "显示边栏"
+		label = locales.ShowSidebar()
 	}
 	toggle := a.toolbarButton(c.Key("toggle-sidebar"), sidebarIcon, label).Absolute().
 		Left(bar.Left + 6).Top((titleBarHeight - 28) / 2)
@@ -138,8 +140,8 @@ func (a *app) signInView(c *ui.Context) {
 			ui.Column(c).Width(400).Padding(32, 32, 28).Gap(14).AlignItems(ui.Center).Radius(26).
 				Material(glass.Glass{}).Children(func() {
 				ui.Image(c, appIcon).Size(72, 72)
-				ui.Text(c, "登录 Slack").FontSize(22).FontWeight(700).Margin(4, 0, 0, 0)
-				ui.Text(c, "运行 go run ./cmd/import-safari 从 Safari 导入，或填入网页版 Slack 的 xoxc token 和 d cookie。").
+				ui.Text(c, locales.SignInTitle()).FontSize(22).FontWeight(700).Margin(4, 0, 0, 0)
+				ui.Text(c, locales.SignInHint()).
 					FontSize(12).TextColor(t.TextMuted).TextAlign(ui.Center).LineHeight(1.4)
 				ui.Column(c).Gap(8).Width(336).Margin(6, 0, 0, 0).Children(func() {
 					ui.TextInput(c, &a.tokenIn).Label("Token").Placeholder("xoxc-…").Password().Radius(10)
@@ -148,9 +150,9 @@ func (a *app) signInView(c *ui.Context) {
 					if cookie.Submitted() && ready {
 						a.signIn(a.tokenIn, a.cookieIn, true)
 					}
-					label := "登录"
+					label := locales.SignIn()
 					if a.signingIn {
-						label = "正在登录…"
+						label = locales.SigningIn()
 					}
 					button := ui.ButtonBase(c).Height(34).Radius(17).Center().Margin(6, 0, 0, 0).Label(label).Disabled(!ready)
 					if ready {
@@ -236,17 +238,17 @@ func (a *app) sidebar(c *ui.Context) {
 				})
 			}
 			list := ui.Sidebar(c, &a.selected, func() {
-				ui.SidebarSection(c, "频道", &a.channelsOpen, func() {
+				ui.SidebarSection(c, locales.Channels(), &a.channelsOpen, func() {
 					for _, ch := range rooms {
 						item(ch)
 					}
 				})
-				ui.SidebarSection(c, "私信", &a.dmsOpen, func() {
+				ui.SidebarSection(c, locales.DirectMessages(), &a.dmsOpen, func() {
 					for _, ch := range dms {
 						item(ch)
 					}
 				})
-			}).Grow(1).Background(ui.Transparent).Label("会话")
+			}).Grow(1).Background(ui.Transparent).Label(locales.Conversations())
 			if list.Changed() {
 				a.open(a.selected)
 			}
@@ -278,7 +280,7 @@ func (a *app) account(c *ui.Context) {
 				ui.Row(c).Gap(5).AlignItems(ui.Center).Children(func() {
 					status, state := ui.Hex("#34C759"), a.auth.Team
 					if !a.connected {
-						status, state = ui.Hex("#FF9F0A"), "正在连接…"
+						status, state = ui.Hex("#FF9F0A"), locales.Connecting()
 					}
 					ui.Box(c).Size(7, 7).Radius(3.5).Background(status)
 					ui.Text(c, state).FontSize(11).TextColor(t.TextMuted).SingleLine()
@@ -288,11 +290,11 @@ func (a *app) account(c *ui.Context) {
 		})
 	})
 	b.Menu(func(m *ui.Menu) {
-		if m.Item("设置…").Chosen() {
+		if m.Item(locales.MenuSettings()).Chosen() {
 			a.openSettings()
 		}
 		m.Separator()
-		if m.Item("退出登录").Chosen() {
+		if m.Item(locales.SignOut()).Chosen() {
 			a.signOut()
 		}
 	})
@@ -394,7 +396,7 @@ func (a *app) content(c *ui.Context) {
 		ui.Box(c).Absolute().Top(0).Left(0).Right(0).Height(titleBarHeight).DragWindow()
 		ui.Column(c).Fill().Center().Gap(10).Children(func() {
 			ui.Icon(c, bubbleIcon).Size(40, 40).TextColor(t.TextMuted.Alpha(0.6))
-			ui.Text(c, "选择一个频道或私信").FontSize(15).TextColor(t.TextMuted)
+			ui.Text(c, locales.PickConversation()).FontSize(15).TextColor(t.TextMuted)
 		})
 		return
 	}
@@ -410,7 +412,7 @@ func (a *app) content(c *ui.Context) {
 		case ch.loading:
 			ui.Spinner(c).Margin(ui.Auto)
 		case len(ch.messages) == 0:
-			ui.Text(c, "还没有消息").TextColor(t.TextMuted).Margin(ui.Auto)
+			ui.Text(c, locales.NoMessages()).TextColor(t.TextMuted).Margin(ui.Auto)
 		}
 	})
 
@@ -437,7 +439,7 @@ func (a *app) content(c *ui.Context) {
 	// The composer floats over the end of the messages.
 	ui.Box(c).Absolute().Bottom(0).Left(0).Right(0).Height(composerRoom + 10).PassThrough().Material(glass.ScrollEdge{Bottom: true})
 	ui.Box(c).Absolute().Bottom(14).Left(20).Right(20).Children(func() {
-		a.composer(c.Key("composer:"+ch.ID), &a.draft, "发消息到 "+a.title(ch), func(text string) { a.send(ch.ID, text, "") })
+		a.composer(c.Key("composer:"+ch.ID), &a.draft, locales.MessageTo(a.title(ch)), func(text string) { a.send(ch.ID, text, "") })
 	})
 }
 
@@ -464,16 +466,16 @@ func (a *app) threadPane(c *ui.Context) {
 			AlignItems(ui.Center).DragWindow().Children(func() {
 			ui.Icon(c, threadsIcon).Size(15, 15).TextColor(t.TextMuted)
 			ui.Column(c).Grow(1).MinWidth(0).Children(func() {
-				ui.Text(c, "线程").FontSize(14).FontWeight(600)
+				ui.Text(c, locales.Thread()).FontSize(14).FontWeight(600)
 				ui.Text(c, a.title(ch)).FontSize(11).TextColor(t.TextMuted).SingleLine()
 			})
-			if a.toolbarButton(c.Key("close-thread"), closeIcon, "关闭线程").Clicked() {
+			if a.toolbarButton(c.Key("close-thread"), closeIcon, locales.CloseThread()).Clicked() {
 				a.thread = nil
 			}
 		})
 		ui.Box(c).Absolute().Bottom(0).Left(0).Right(0).Height(composerRoom).PassThrough().Material(glass.ScrollEdge{Bottom: true})
 		ui.Box(c).Absolute().Bottom(14).Left(14).Right(14).Children(func() {
-			a.composer(c.Key("composer:"+th.ts), &th.draft, "回复…", func(text string) { a.send(th.channel, text, th.ts) })
+			a.composer(c.Key("composer:"+th.ts), &th.draft, locales.ReplyPlaceholder(), func(text string) { a.send(th.channel, text, th.ts) })
 		})
 	})
 }
@@ -537,7 +539,16 @@ func (a *app) message(c *ui.Context, ch *channel, ms []slack.Message, i int, thr
 					})
 				}
 				if md := a.markdown(m); md != "" {
-					markdown.View(c, md, &a.md)
+					if m.Edited != nil {
+						// The mark is a note beside the text, not part of it,
+						// as Slack shows it: small and muted, after the last line.
+						ui.Row(c).Gap(5).AlignItems(ui.End).Children(func() {
+							markdown.View(c, md, &a.md).Shrink(1).MinWidth(0)
+							ui.Text(c, locales.Edited()).FontSize(10).TextColor(t.TextMuted).Shrink(0).Padding(0, 0, 2)
+						})
+					} else {
+						markdown.View(c, md, &a.md)
+					}
 				}
 				a.files(c, m)
 				a.reactions(c, ch, m)
@@ -567,7 +578,7 @@ var frequent = []string{"+1", "heart", "joy", "tada", "eyes", "pray", "white_che
 func (a *app) actions(c *ui.Context, ch *channel, m *slack.Message, threads bool) {
 	ui.Row(c).Absolute().Top(-16).Right(14).Gap(2).Padding(3).Radius(17).AlignItems(ui.Center).Material(glass.Glass{}).
 		Shadow(0, 2, 10, 0, ui.RGBA(0, 0, 0, 0.1)).Children(func() {
-		react := a.actionButton(c.Key("react"), smileIcon, "添加表情")
+		react := a.actionButton(c.Key("react"), smileIcon, locales.AddReaction())
 		if react.Clicked() {
 			a.picking, a.pickerOpen, a.pickerQuery = m.TS, true, ""
 		}
@@ -578,7 +589,7 @@ func (a *app) actions(c *ui.Context, ch *channel, m *slack.Message, threads bool
 		}
 		ui.Popover(c, react, open, func() { a.picker(c, ch, m) })
 		if threads {
-			if a.actionButton(c.Key("reply"), replyIcon, "在线程中回复").Clicked() {
+			if a.actionButton(c.Key("reply"), replyIcon, locales.ReplyInThread()).Clicked() {
 				a.openThread(ch, m.TS)
 			}
 		}
@@ -603,12 +614,12 @@ func (a *app) picker(c *ui.Context, ch *channel, m *slack.Message) {
 		names = slack.SearchEmoji(q, 48)
 	}
 	ui.Column(c).Width(300).Gap(8).Padding(4).Children(func() {
-		search := ui.TextInput(c, &a.pickerQuery).Placeholder("搜索表情").AutoFocus().Radius(8)
+		search := ui.TextInput(c, &a.pickerQuery).Placeholder(locales.SearchEmoji()).AutoFocus().Radius(8)
 		if search.Submitted() && len(names) > 0 {
 			a.toggleReaction(ch, m, names[0])
 		}
 		if len(names) == 0 {
-			ui.Text(c, "没有找到表情").FontSize(12).TextColor(t.TextMuted).Padding(12).AlignSelf(ui.Center)
+			ui.Text(c, locales.NoEmoji()).FontSize(12).TextColor(t.TextMuted).Padding(12).AlignSelf(ui.Center)
 			return
 		}
 		ui.Grid(c).Columns(8).Gap(2).Children(func() {
@@ -666,7 +677,7 @@ func (a *app) replies(c *ui.Context, ch *channel, m *slack.Message) {
 		b.Children(func() {
 			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Icon(c, bubbleIcon).Size(13, 13).TextColor(t.Accent)
-				ui.Text(c, fmt.Sprintf("%d 条回复", m.ReplyCount)).FontSize(12).FontWeight(600).TextColor(t.Accent)
+				ui.Text(c, locales.Replies(m.ReplyCount)).FontSize(12).FontWeight(600).TextColor(t.Accent)
 			})
 		})
 		if b.Clicked() {
@@ -725,21 +736,21 @@ func (a *app) files(c *ui.Context, m *slack.Message) {
 // fileMenu is what a right-click on a file offers.
 func (a *app) fileMenu(c *ui.Context, menu *ui.Menu, files []slack.File, i int) {
 	f := files[i]
-	if menu.Item("快速查看").Chosen() {
+	if menu.Item(locales.QuickLook()).Chosen() {
 		a.preview(files, i)
 	}
-	if menu.Item("存储到“下载”").Chosen() {
+	if menu.Item(locales.SaveToDownloads()).Chosen() {
 		a.downloadFile(f, false)
 	}
 	if d := a.downloads[f.ID]; d != nil && d.finished {
-		if menu.Item("在访达中显示").Chosen() {
+		if menu.Item(locales.RevealInFinder()).Chosen() {
 			a.revealFile(d.path)
 		}
 	}
 	menu.Separator()
-	if menu.Item("拷贝链接").Disabled(f.Permalink == "").Chosen() {
+	if menu.Item(locales.CopyLink()).Disabled(f.Permalink == "").Chosen() {
 		a.services.WriteClipboard(f.Permalink)
-		c.Toast("已拷贝链接")
+		c.Toast(locales.LinkCopied())
 	}
 }
 
@@ -772,7 +783,7 @@ func (a *app) fileCard(c *ui.Context, f slack.File) {
 					ui.Text(c, name).FontWeight(500).SingleLine()
 					switch {
 					case d != nil && d.err != "":
-						ui.Text(c, "存储失败").FontSize(11).TextColor(t.Danger).Tooltip(d.err)
+						ui.Text(c, locales.SaveFailed()).FontSize(11).TextColor(t.Danger).Tooltip(d.err)
 					case d != nil && !d.finished:
 						ui.Progress(c, fraction(d))
 					default:
@@ -781,7 +792,7 @@ func (a *app) fileCard(c *ui.Context, f slack.File) {
 							kind += " · " + s
 						}
 						if d != nil && d.finished {
-							kind = "已存储到“下载”"
+							kind = locales.SavedToDownloads()
 						}
 						ui.Text(c, kind).FontSize(11).TextColor(t.TextMuted).SingleLine()
 					}
@@ -794,11 +805,11 @@ func (a *app) fileCard(c *ui.Context, f slack.File) {
 		card.ContextMenu(func(menu *ui.Menu) { a.fileMenu(c, menu, []slack.File{f}, 0) })
 		switch {
 		case d != nil && d.finished:
-			if a.toolbarButton(c.Key("reveal:"+f.ID), revealIcon, "在访达中显示").Clicked() {
+			if a.toolbarButton(c.Key("reveal:"+f.ID), revealIcon, locales.RevealInFinder()).Clicked() {
 				a.revealFile(d.path)
 			}
 		case d == nil || d.err != "":
-			if a.toolbarButton(c.Key("save:"+f.ID), downloadIcon, "存储到“下载”").Clicked() {
+			if a.toolbarButton(c.Key("save:"+f.ID), downloadIcon, locales.SaveToDownloads()).Clicked() {
 				delete(a.downloads, f.ID)
 				a.downloadFile(f, false)
 			}
@@ -885,7 +896,7 @@ func (a *app) composer(c *ui.Context, draft *string, placeholder string, send fu
 			return true
 		})
 		ready := strings.TrimSpace(*draft) != ""
-		b := ui.ButtonBase(c).Size(28, 28).Radius(14).Center().Label("发送").Disabled(!ready)
+		b := ui.ButtonBase(c).Size(28, 28).Radius(14).Center().Label(locales.Send()).Disabled(!ready)
 		if ready {
 			b.Material(glass.Glass{Tint: t.Accent, Interactive: true}).TextColor(t.AccentText).Cursor(ui.CursorPointer)
 		} else {

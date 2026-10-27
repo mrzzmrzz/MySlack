@@ -13,6 +13,8 @@ import (
 	"github.com/egoist/mygo"
 
 	"github.com/mrzzmrzz/MySlack/slack"
+
+	"github.com/mrzzmrzz/MySlack/locales"
 )
 
 // download is a file of the workspace saved, or being saved, to the
@@ -126,7 +128,7 @@ func size(n int64) string {
 	case n <= 0:
 		return ""
 	case n < 1000:
-		return fmt.Sprintf("%d 字节", n)
+		return locales.Bytes(int(n))
 	case n < 1000*1000:
 		return fmt.Sprintf("%.0f KB", float64(n)/1000)
 	case n < 1000*1000*1000:

@@ -142,15 +142,25 @@ Every Mac app has these, and so must this one (see `keys.go`):
 
 ### Words
 
-- The app declares it is written in Simplified Chinese
-  (`mygo.App.SetLanguages("zh-Hans")` and
-  `import _ "github.com/egoist/mygo/locales/zh-Hans"`), so the menus AppKit
-  labels (编辑, 窗口, 关于, 退出) and MyGo's controls are Chinese too; the menu
-  bar never mixes languages. Use the system's standard menus and roles, and
-  the system's names for the menus the app adds (文件, 显示, 前往).
+- The app is written in English and Simplified Chinese, and shows the one
+  the user's languages prefer (System Settings › General › Language &
+  Region, or the app's own language there), following a change at once.
+  Every text the user reads is a message of the catalogs `locales/en.json`
+  and `locales/zh-Hans.json`, said through the generated `locales` package
+  (`locales.Send()`, `locales.Replies(n)`); never a string literal in the Go
+  code. After changing a catalog, run `go tool mygo generate` and commit
+  `locales/catalog_gen.go`. `import _ "github.com/egoist/mygo/locales/zh-Hans"`
+  gives MyGo's own controls their Chinese; the menus AppKit labels (编辑,
+  窗口, 关于, 退出) follow the app's language, so the menu bar never mixes
+  languages. Use the system's standard menus and roles, and the system's
+  names for the menus the app adds (文件, 显示, 前往). The tests read the app
+  in Chinese (`locale_test.go`).
+- Dates in the app's language through `i18n.FormatDate` (`date` in
+  `main.go`), not `time.Format` with words in them.
 - Simplified Chinese, in the words macOS uses: 拷贝 not 复制 for the
   clipboard, 存储 for saving an edit, 设置… with the ellipsis when it opens
-  a window.
+  a window. English as macOS writes it: title case for menu items and
+  buttons (Save to Downloads, Sign Out), sentence case for explanations.
 - Keyboard shortcuts as macOS writes them: ⌘K, ⌃⌘S, ⌘,.
 
 ## Build target
@@ -173,6 +183,12 @@ Intel/x86_64 or universal binaries. CI and release artifacts are under
 `AppIcon.icon` is an Icon Composer icon with light and dark appearances; the
 logo is drawn on the icon's own 1024-point canvas (its SVG is 1024 × 1024)
 and placed at scale 1, which avoids guessing Icon Composer's scaling.
-Compiling it needs Xcode 26's `actool`: CI has it, so after changing the
-icon, take `Contents/Resources/Assets.car` from the app CI builds and commit
-it; `mygo.json` points `macos.icon` at that `Assets.car`.
+The canvas is the icon's rounded square: the logo's longer side spans 73%
+of it (`translate(135 135) scale(5.937)`, 745 points), centered, as the
+logos of Messages, Mail, Music, WeChat and Claude span 72-80% of theirs; at
+half the canvas it looked small beside them. `mygo.json` points `macos.icon`
+at the `.icon`, and `mygo build` compiles it with Xcode 26's `actool`: the
+releases CI builds have it. A machine without `actool` skips it with a
+message, and its build keeps `resources/icon.png`, the icon's background
+in the 824-point rounded square of the icon grid with the logo drawn into
+that square, as its icon (the sign-in card shows it too).

@@ -4,6 +4,8 @@ import (
 	"slices"
 
 	"github.com/egoist/mygo"
+
+	"github.com/mrzzmrzz/MySlack/locales"
 )
 
 // menu is the menu bar, with the items and shortcuts a Mac app has: the
@@ -21,7 +23,7 @@ func (a *app) menu() *mygo.Menu {
 		{Label: "MySlack", Submenu: []*mygo.MenuItem{
 			{Role: mygo.RoleAbout},
 			mygo.Separator(),
-			{Label: "设置…", Accelerator: "CmdOrCtrl+,", Click: func(*mygo.MenuItem, *mygo.Window) { a.openSettings() }},
+			{Label: locales.MenuSettings(), Accelerator: "CmdOrCtrl+,", Click: func(*mygo.MenuItem, *mygo.Window) { a.openSettings() }},
 			mygo.Separator(),
 			{Role: mygo.RoleServices},
 			mygo.Separator(),
@@ -31,23 +33,23 @@ func (a *app) menu() *mygo.Menu {
 			mygo.Separator(),
 			{Role: mygo.RoleQuit},
 		}},
-		{Label: "文件", Submenu: []*mygo.MenuItem{
+		{Label: locales.MenuFile(), Submenu: []*mygo.MenuItem{
 			{Role: mygo.RoleClose},
 		}},
 		{Role: mygo.RoleEditMenu},
-		{Label: "显示", Submenu: []*mygo.MenuItem{
-			{Label: "显示或隐藏边栏", Accelerator: "Ctrl+Cmd+S", Click: do(func() { a.sidebarHidden = !a.sidebarHidden })},
+		{Label: locales.MenuView(), Submenu: []*mygo.MenuItem{
+			{Label: locales.MenuToggleSidebar(), Accelerator: "Ctrl+Cmd+S", Click: do(func() { a.sidebarHidden = !a.sidebarHidden })},
 			mygo.Separator(),
-			{Label: "放大", Accelerator: "CmdOrCtrl+Plus", Click: do(func() { a.zoom(1) })},
-			{Label: "缩小", Accelerator: "CmdOrCtrl+-", Click: do(func() { a.zoom(-1) })},
-			{Label: "实际大小", Accelerator: "CmdOrCtrl+0", Click: do(func() { a.zoom(0) })},
+			{Label: locales.MenuZoomIn(), Accelerator: "CmdOrCtrl+Plus", Click: do(func() { a.zoom(1) })},
+			{Label: locales.MenuZoomOut(), Accelerator: "CmdOrCtrl+-", Click: do(func() { a.zoom(-1) })},
+			{Label: locales.MenuActualSize(), Accelerator: "CmdOrCtrl+0", Click: do(func() { a.zoom(0) })},
 			mygo.Separator(),
 			{Role: mygo.RoleToggleFullScreen},
 		}},
-		{Label: "前往", Submenu: []*mygo.MenuItem{
-			{Label: "上一个会话", Accelerator: "Alt+Up", Click: do(func() { a.step(-1, false) })},
-			{Label: "下一个会话", Accelerator: "Alt+Down", Click: do(func() { a.step(1, false) })},
-			{Label: "下一个未读会话", Accelerator: "Alt+Shift+Down", Click: do(func() { a.step(1, true) })},
+		{Label: locales.MenuGo(), Submenu: []*mygo.MenuItem{
+			{Label: locales.MenuPrevious(), Accelerator: "Alt+Up", Click: do(func() { a.step(-1, false) })},
+			{Label: locales.MenuNext(), Accelerator: "Alt+Down", Click: do(func() { a.step(1, false) })},
+			{Label: locales.MenuNextUnread(), Accelerator: "Alt+Shift+Down", Click: do(func() { a.step(1, true) })},
 		}},
 		{Role: mygo.RoleWindowMenu},
 	})

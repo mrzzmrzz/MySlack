@@ -8,6 +8,8 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/mrzzmrzz/MySlack/slack"
+
+	"github.com/mrzzmrzz/MySlack/locales"
 )
 
 // person is a message's avatar, or its author's name with isAvatar false,
@@ -73,13 +75,13 @@ func (a *app) profile(c *ui.Context, id string) {
 		}
 		if u != nil && u.TZ != "" {
 			if loc, err := time.LoadLocation(u.TZ); err == nil {
-				ui.Text(c, "当地时间 "+time.Now().In(loc).Format("15:04")).FontSize(12).TextColor(t.TextMuted)
+				ui.Text(c, locales.LocalTime(time.Now().In(loc).Format("15:04"))).FontSize(12).TextColor(t.TextMuted)
 			}
 		}
 		if id != a.auth.UserID && (u == nil || !u.IsBot) {
-			b := ui.ButtonBase(c.Key("write")).AlignSelf(ui.Stretch).Height(30).Radius(15).Center().Label("发消息").
+			b := ui.ButtonBase(c.Key("write")).AlignSelf(ui.Stretch).Height(30).Radius(15).Center().Label(locales.SendMessage()).
 				Material(glass.Glass{Tint: t.Accent, Interactive: true}).Cursor(ui.CursorPointer)
-			b.Children(func() { ui.Text(c, "发消息").FontWeight(600).TextColor(t.AccentText) })
+			b.Children(func() { ui.Text(c, locales.SendMessage()).FontWeight(600).TextColor(t.AccentText) })
 			if b.Clicked() {
 				a.profileOpen = false
 				a.openDM(id)

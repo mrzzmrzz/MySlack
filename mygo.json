@@ -4,6 +4,10 @@
   "version": "0.1.4",
   "out": "build",
   "macos": {
-    "icon": "Assets.car"
+    "icon": "AppIcon.icon"
+  },
+  "i18n": {
+    "dir": "locales",
+    "source": "en"
   }
 }

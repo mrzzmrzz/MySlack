@@ -9,6 +9,8 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
+
+	"github.com/mrzzmrzz/MySlack/locales"
 )
 
 // settings are the user's choices, kept as JSON in the app's data folder.
@@ -87,7 +89,7 @@ func (a *app) openSettings() {
 	}
 	a.cacheBytes = -1
 	a.settingsWin = mygo.NewWindow(mygo.WindowOptions{
-		Title:           "设置",
+		Title:           locales.SettingsTitle(),
 		Width:           540,
 		Height:          470,
 		DisableResize:   true,
@@ -123,7 +125,7 @@ func (a *app) settingsView(c *ui.Context) {
 				for i, tab := range []struct {
 					icon  *ui.SVG
 					label string
-				}{{gearIcon, "通用"}, {bellIcon, "通知"}, {personIcon, "账户"}} {
+				}{{gearIcon, locales.TabGeneral()}, {bellIcon, locales.TabNotifications()}, {personIcon, locales.TabAccount()}} {
 					b := ui.ButtonBase(c.Key(tab.label)).Width(68).Padding(5, 0).Radius(11).Label(tab.label).Cursor(ui.CursorPointer)
 					color := t.TextMuted
 					switch {
@@ -162,45 +164,45 @@ func (a *app) settingsView(c *ui.Context) {
 
 func (a *app) generalSettings(c *ui.Context) {
 	s := &a.settings
-	group(c, "外观", func() {
-		row(c, "主题", "", func() {
-			if ui.Segmented(c, &s.Appearance, "跟随系统", "浅色", "深色").Label("主题").Changed() {
+	group(c, locales.Appearance(), func() {
+		row(c, locales.Theme(), "", func() {
+			if ui.Segmented(c, &s.Appearance, locales.ThemeSystem(), locales.ThemeLight(), locales.ThemeDark()).Label(locales.Theme()).Changed() {
 				a.saveSettings()
 			}
 		})
 		separator(c)
-		row(c, "文字大小", "", func() {
-			if ui.Segmented(c, &s.TextSize, "小", "标准", "大").Label("文字大小").Changed() {
+		row(c, locales.TextSize(), "", func() {
+			if ui.Segmented(c, &s.TextSize, locales.TextSmall(), locales.TextStandard(), locales.TextLarge()).Label(locales.TextSize()).Changed() {
 				a.saveSettings()
 			}
 		})
 		separator(c)
-		row(c, "紧凑模式", "减小消息间距和头像尺寸", func() {
-			if ui.Switch(c, &s.Compact).Label("紧凑模式").Changed() {
+		row(c, locales.Compact(), locales.CompactDetail(), func() {
+			if ui.Switch(c, &s.Compact).Label(locales.Compact()).Changed() {
 				a.saveSettings()
 			}
 		})
 	})
-	group(c, "存储", func() {
-		used := "正在计算…"
+	group(c, locales.Storage(), func() {
+		used := locales.Calculating()
 		switch {
 		case a.cacheBytes == 0:
-			used = "没有缓存"
+			used = locales.NoCache()
 		case a.cacheBytes > 0:
 			used = size(a.cacheBytes)
 		}
-		row(c, "缓存", "头像、缩略图和预览过的文件，"+used, func() {
-			if ui.Button(c, "清除缓存").Disabled(a.cacheBytes <= 0).Clicked() {
+		row(c, locales.Cache(), locales.CacheDetail(used), func() {
+			if ui.Button(c, locales.ClearCache()).Disabled(a.cacheBytes <= 0).Clicked() {
 				a.clearCache()
 				a.cacheBytes = 0
-				c.Toast("已清除缓存")
+				c.Toast(locales.CacheCleared())
 			}
 		})
 	})
 	a.measureCache()
-	group(c, "发送消息", func() {
-		row(c, "用 ⌘↩ 发送", "打开后 ↩ 换行；关闭时 ↩ 发送、⇧↩ 换行", func() {
-			if ui.Switch(c, &s.CmdEnter).Label("用 ⌘↩ 发送").Changed() {
+	group(c, locales.Sending(), func() {
+		row(c, locales.CmdEnter(), locales.CmdEnterDetail(), func() {
+			if ui.Switch(c, &s.CmdEnter).Label(locales.CmdEnter()).Changed() {
 				a.saveSettings()
 			}
 		})
@@ -209,28 +211,28 @@ func (a *app) generalSettings(c *ui.Context) {
 
 func (a *app) notificationSettings(c *ui.Context) {
 	s := &a.settings
-	group(c, "桌面通知", func() {
-		row(c, "新消息通知", "窗口不在前台或不在当前会话时提醒", func() {
-			if ui.Switch(c, &s.Notify).Label("新消息通知").Changed() {
+	group(c, locales.DesktopNotifications(), func() {
+		row(c, locales.NotifyNew(), locales.NotifyNewDetail(), func() {
+			if ui.Switch(c, &s.Notify).Label(locales.NotifyNew()).Changed() {
 				a.saveSettings()
 			}
 		})
 		separator(c)
-		row(c, "仅私信和 @提及", "", func() {
-			if ui.Switch(c, &s.OnlyMention).Label("仅私信和 @提及").Disabled(!s.Notify).Changed() {
+		row(c, locales.OnlyMentions(), "", func() {
+			if ui.Switch(c, &s.OnlyMention).Label(locales.OnlyMentions()).Disabled(!s.Notify).Changed() {
 				a.saveSettings()
 			}
 		})
 		separator(c)
-		row(c, "声音", "", func() {
-			if ui.Switch(c, &s.Sound).Label("声音").Disabled(!s.Notify).Changed() {
+		row(c, locales.Sound(), "", func() {
+			if ui.Switch(c, &s.Sound).Label(locales.Sound()).Disabled(!s.Notify).Changed() {
 				a.saveSettings()
 			}
 		})
 	})
-	group(c, "程序坞", func() {
-		row(c, "显示未读数", "在程序坞图标上显示有未读消息的会话数", func() {
-			if ui.Switch(c, &s.DockBadge).Label("显示未读数").Changed() {
+	group(c, locales.Dock(), func() {
+		row(c, locales.DockBadge(), locales.DockBadgeDetail(), func() {
+			if ui.Switch(c, &s.DockBadge).Label(locales.DockBadge()).Changed() {
 				a.saveSettings()
 			}
 		})
@@ -240,12 +242,12 @@ func (a *app) notificationSettings(c *ui.Context) {
 func (a *app) accountSettings(c *ui.Context) {
 	t := c.Theme()
 	if a.auth == nil {
-		group(c, "账户", func() {
-			row(c, "未登录", "在主窗口登录 Slack", func() {})
+		group(c, locales.TabAccount(), func() {
+			row(c, locales.NotSignedIn(), locales.NotSignedInDetail(), func() {})
 		})
 		return
 	}
-	group(c, "账户", func() {
+	group(c, locales.TabAccount(), func() {
 		ui.Row(c).Padding(12, 14).Gap(12).AlignItems(ui.Center).Children(func() {
 			me := a.users[a.auth.UserID]
 			name := a.auth.User
@@ -260,10 +262,10 @@ func (a *app) accountSettings(c *ui.Context) {
 			})
 		})
 		separator(c)
-		row(c, "连接", "", func() {
-			state, color := "已连接", ui.Hex("#2EB67D")
+		row(c, locales.Connection(), "", func() {
+			state, color := locales.Connected(), ui.Hex("#2EB67D")
 			if !a.connected {
-				state, color = "正在连接…", t.Danger
+				state, color = locales.Connecting(), t.Danger
 			}
 			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Box(c).Size(8, 8).Radius(4).Background(color)
@@ -272,8 +274,8 @@ func (a *app) accountSettings(c *ui.Context) {
 		})
 	})
 	group(c, "", func() {
-		row(c, "退出登录", "从钥匙串删除这个 workspace 的会话", func() {
-			if ui.Button(c, "退出登录…").Clicked() {
+		row(c, locales.SignOut(), locales.SignOutDetail(), func() {
+			if ui.Button(c, locales.SignOutEllipsis()).Clicked() {
 				a.signOut()
 				if a.win != nil {
 					a.win.Invalidate()

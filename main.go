@@ -18,6 +18,9 @@ import (
 	"github.com/egoist/mygo/ui/markdown"
 
 	"github.com/mrzzmrzz/MySlack/slack"
+
+	"github.com/egoist/mygo/i18n"
+	"github.com/mrzzmrzz/MySlack/locales"
 )
 
 // channel is a conversation with the messages loaded for it.
@@ -391,9 +394,6 @@ func (a *app) markdown(m *slack.Message) string {
 		}
 	}
 	md := strings.Join(parts, "\n\n")
-	if m.Edited != nil && md != "" {
-		md += " *(已编辑)*"
-	}
 	return md
 }
 
@@ -489,16 +489,19 @@ func day(tm time.Time) string {
 	now := time.Now()
 	switch {
 	case sameDay(tm, now):
-		return "今天"
+		return locales.Today()
 	case sameDay(tm, now.AddDate(0, 0, -1)):
-		return "昨天"
+		return locales.Yesterday()
 	case tm.Year() == now.Year():
-		return tm.Format("1月2日") + " " + weekdays[tm.Weekday()]
+		return date(tm, "MMMEEEEd") // Monday, January 2; 1月2日星期一
 	}
-	return tm.Format("2006年1月2日")
+	return date(tm, "yMMMd")
 }
 
-var weekdays = [...]string{"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"}
+// date is tm as the app's language writes the fields of a CLDR skeleton.
+func date(tm time.Time, skeleton string) string {
+	return i18n.FormatDate(i18n.Locale(), tm, i18n.DateOptions{Skeleton: skeleton})
+}
 
 func stamp(tm time.Time) string {
 	now := time.Now()
@@ -506,9 +509,9 @@ func stamp(tm time.Time) string {
 		return tm.Format("15:04")
 	}
 	if tm.Year() == now.Year() {
-		return tm.Format("1月2日 15:04")
+		return date(tm, "MMMd") + " " + tm.Format("15:04")
 	}
-	return tm.Format("2006年1月2日 15:04")
+	return date(tm, "yMMMd") + " " + tm.Format("15:04")
 }
 
 func (a *app) send(channelID, text, threadTS string) {
@@ -521,7 +524,7 @@ func (a *app) send(channelID, text, threadTS string) {
 		a.update(func() {
 			if err != nil {
 				if ch := a.channels[channelID]; ch != nil {
-					ch.err = "发送失败：" + err.Error()
+					ch.err = locales.SendFailed(err.Error())
 				}
 				return
 			}
@@ -690,14 +693,20 @@ func appendNew(ms []slack.Message, m slack.Message) []slack.Message {
 
 func main() {
 	a := newApp()
-	// The app is written in Simplified Chinese: the menus AppKit labels
-	// (Edit, Window, About, Quit) and MyGo's own controls say it too, rather
-	// than English beside the app's Chinese.
-	mygo.App.SetLanguages("zh-Hans")
+	// The app shows the language of its catalogs (locales/) the user reads
+	// best, as the system lists their languages, and follows a change of
+	// them: the views say their messages anew every frame, and what was set
+	// once is set again when it changes.
 	mygo.App.WhenReady(func() {
 		migrateIdentifier()
 		a.settings = loadSettings()
 		mygo.App.SetMenu(a.menu())
+		mygo.App.OnLocaleChanged(func(string) {
+			mygo.App.SetMenu(a.menu())
+			if a.settingsWin != nil {
+				a.settingsWin.SetTitle(locales.SettingsTitle())
+			}
+		})
 		// A made-up workspace for screenshots, or the session kept from
 		// last time.
 		demo, isDemo := os.LookupEnv("SLACK_MYGO_DEMO")

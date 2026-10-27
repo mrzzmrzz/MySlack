@@ -87,17 +87,7 @@ The code is small:
 ## Releases
 
 Pushing a tag `v<version>` matching `version` in `mygo.json` builds a
-universal disk image and publishes it as a GitHub release. With these
-repository secrets set, the app is signed with a Developer ID and notarized:
-
-| Secret | |
-|---|---|
-| `APPLE_CERTIFICATE_BASE64` | the Developer ID Application certificate, a `.p12` in base64 |
-| `APPLE_CERTIFICATE_PASSWORD` | its password |
-| `APPLE_SIGNING_IDENTITY` | e.g. `Developer ID Application: Jane Doe (TEAMID)` |
-| `APPLE_NOTARY_KEY` | an App Store Connect API key, the `.p8` file or it in base64 |
-| `APPLE_NOTARY_KEY_ID` | its key ID |
-| `APPLE_NOTARY_ISSUER_ID` | its issuer ID |
+universal disk image and publishes it as a GitHub release.
 
 ## License
 

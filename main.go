@@ -63,9 +63,10 @@ type app struct {
 	connected    bool
 	connErr      string
 
-	md       markdown.Options
-	services ui.Services
-	images   map[string]*picture // avatars and thumbnails by URL
+	md        markdown.Options
+	services  ui.Services
+	images    map[string]*picture  // avatars and thumbnails by URL
+	downloads map[string]*download // files saved, by ID
 
 	sidebarHidden bool
 	titleInset    float32 // of the toolbar's title, past the window's controls
@@ -94,6 +95,7 @@ func newApp() *app {
 		channelsOpen: true,
 		dmsOpen:      true,
 		images:       map[string]*picture{},
+		downloads:    map[string]*download{},
 		settings:     defaultSettings(),
 	}
 	a.md = markdown.Options{

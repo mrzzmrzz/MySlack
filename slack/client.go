@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -158,6 +159,7 @@ func (c *Client) Conversations(ctx context.Context) ([]Channel, error) {
 }
 
 type File struct {
+	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Title     string `json:"title"`
 	Mimetype  string `json:"mimetype"`
@@ -165,6 +167,10 @@ type File struct {
 	Thumb360  string `json:"thumb_360"`
 	Thumb360W int    `json:"thumb_360_w"`
 	Thumb360H int    `json:"thumb_360_h"`
+	Filetype  string `json:"pretty_type"`
+	Size      int64  `json:"size"`
+	// URLPrivateDownload is the file itself, which needs the session.
+	URLPrivateDownload string `json:"url_private_download"`
 }
 
 type Reaction struct {
@@ -365,4 +371,59 @@ func (c *Client) Fetch(ctx context.Context, u string) ([]byte, error) {
 		return nil, fmt.Errorf("GET %s: %s", u, resp.Status)
 	}
 	return io.ReadAll(io.LimitReader(resp.Body, 20<<20))
+}
+
+// Download saves a file of the workspace at path, reporting how much of it
+// has come; the file shows at path only once it is whole.
+func (c *Client) Download(ctx context.Context, u, path string, progress func(done, total int64)) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("Cookie", c.cookieHeader())
+	// Files may be large: no timeout but ctx's.
+	resp, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("GET %s: %s", u, resp.Status)
+	}
+	if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
+		return fmt.Errorf("Slack answered with a page, not the file: the session may have expired")
+	}
+	part := path + ".download"
+	f, err := os.Create(part)
+	if err != nil {
+		return err
+	}
+	var done int64
+	buf := make([]byte, 256<<10)
+	for {
+		n, rerr := resp.Body.Read(buf)
+		if n > 0 {
+			if _, err := f.Write(buf[:n]); err != nil {
+				f.Close()
+				os.Remove(part)
+				return err
+			}
+			done += int64(n)
+			progress(done, resp.ContentLength)
+		}
+		if rerr == io.EOF {
+			break
+		}
+		if rerr != nil {
+			f.Close()
+			os.Remove(part)
+			return rerr
+		}
+	}
+	if err := f.Close(); err != nil {
+		os.Remove(part)
+		return err
+	}
+	return os.Rename(part, path)
 }

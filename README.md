@@ -17,7 +17,8 @@ macOS 27.
   replies and reactions
 - Threads in an inspector beside the channel
 - Reactions: add any emoji from a searchable picker, toggle them in place
-- Image thumbnails, file attachments, avatars
+- Files: download to Downloads with progress, open or reveal in Finder;
+  pictures as thumbnails that open in Preview
 - Desktop notifications for direct messages and mentions, and an unread
   count on the Dock
 - Settings (⌘,): appearance, text size, compact mode, ⌘↩ to send,

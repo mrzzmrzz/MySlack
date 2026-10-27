@@ -674,7 +674,8 @@ func (a *app) replies(c *ui.Context, ch *channel, m *slack.Message) {
 	})
 }
 
-// files shows a message's pictures as thumbnails, its other files by name.
+// files shows a message's pictures as thumbnails, which open in Preview,
+// and its other files as cards that download them.
 func (a *app) files(c *ui.Context, m *slack.Message) {
 	t := c.Theme()
 	if len(m.Files) == 0 {
@@ -687,24 +688,100 @@ func (a *app) files(c *ui.Context, m *slack.Message) {
 				if h > 240 {
 					w, h = w*240/h, 240
 				}
-				if p := a.picture(f.Thumb360); p != nil {
-					ui.Image(c, p).Size(w, h).Radius(12).Border(1, t.Border.Alpha(0.5)).Tooltip(f.Name)
-				} else {
-					ui.Box(c).Size(w, h).Radius(12).Background(t.Surface)
+				b := ui.ButtonBase(c.Key("file:"+f.ID)).Size(w, h).Radius(12).Clip().Label(f.Name).Tooltip(f.Name).Cursor(ui.CursorPointer)
+				b.Children(func() {
+					if p := a.picture(f.Thumb360); p != nil {
+						ui.Image(c, p).Size(w, h)
+					} else {
+						ui.Box(c).Size(w, h).Background(t.Surface)
+					}
+					ui.Box(c).Absolute().Top(0).Left(0).Right(0).Bottom(0).Radius(12).Border(1, t.Border.Alpha(0.5)).PassThrough()
+					if d := a.downloads[f.ID]; d != nil && !d.finished && d.err == "" {
+						ui.Box(c).Absolute().Left(10).Right(10).Bottom(10).Children(func() {
+							ui.Progress(c, fraction(d))
+						})
+					}
+				})
+				if b.Clicked() {
+					a.downloadFile(f, true)
 				}
 				continue
 			}
-			name := f.Title
-			if name == "" {
-				name = f.Name
-			}
-			ui.Row(c).Padding(8, 12).Gap(6).Radius(10).Background(t.Surface).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, "📎")
-				ui.Text(c, name).FontSize(12).FontWeight(500)
-			})
+			a.fileCard(c, f)
 		}
 	})
 }
+
+// fileCard is a file as Finder's list shows one: its kind, name and size,
+// or how much of it has come. A click saves it to Downloads, or opens it
+// once saved.
+func (a *app) fileCard(c *ui.Context, f slack.File) {
+	t := c.Theme()
+	d := a.downloads[f.ID]
+	name := f.Title
+	if name == "" {
+		name = f.Name
+	}
+	ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
+		card := ui.ButtonBase(c.Key("file:"+f.ID)).Width(300).Padding(8, 12, 8, 8).Radius(10).
+			Background(t.Surface).Border(1, t.Border.Alpha(0.5)).Label(name).Cursor(ui.CursorPointer)
+		if card.Hovered() {
+			card.Background(t.SurfaceHover)
+		}
+		card.Children(func() {
+			ui.Row(c).Grow(1).Gap(10).AlignItems(ui.Center).Children(func() {
+				ui.Box(c).Size(32, 32).Radius(7).Center().Background(t.Accent.Alpha(0.12)).Children(func() {
+					ui.Icon(c, docIcon).Size(18, 18).TextColor(t.Accent)
+				})
+				ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
+					ui.Text(c, name).FontWeight(500).SingleLine()
+					switch {
+					case d != nil && d.err != "":
+						ui.Text(c, "下载失败，点按重试").FontSize(11).TextColor(t.Danger).Tooltip(d.err)
+					case d != nil && !d.finished:
+						ui.Progress(c, fraction(d))
+					default:
+						kind := f.Filetype
+						if s := size(f.Size); s != "" {
+							kind += " · " + s
+						}
+						if d != nil && d.finished {
+							kind = "已下载 · 点按打开"
+						}
+						ui.Text(c, kind).FontSize(11).TextColor(t.TextMuted).SingleLine()
+					}
+				})
+				if d == nil || d.err != "" {
+					ui.Icon(c, downloadIcon).Size(16, 16).TextColor(t.TextMuted)
+				}
+			})
+		})
+		if card.Clicked() {
+			if d != nil && d.err != "" {
+				delete(a.downloads, f.ID)
+			}
+			a.downloadFile(f, false)
+		}
+		if d != nil && d.finished {
+			if a.toolbarButton(c.Key("reveal:"+f.ID), revealIcon, "在 Finder 中显示").Clicked() {
+				a.revealFile(d.path)
+			}
+		}
+	})
+}
+
+func fraction(d *download) float64 {
+	if d.total <= 0 {
+		return 0
+	}
+	return float64(d.done) / float64(d.total)
+}
+
+var (
+	docIcon      = icon(`<path d="M4 1.8h5.2L12.5 5v8.2a1 1 0 0 1-1 1h-7.5a1 1 0 0 1-1-1V2.8a1 1 0 0 1 1-1z"/><path d="M9 1.8V5h3.5"/>`)
+	downloadIcon = icon(`<path d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10"/>`)
+	revealIcon   = icon(`<circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2 13.5 13.5"/>`)
+)
 
 // reactions shows a message's reactions as capsules; a click adds the
 // user's or takes it back.

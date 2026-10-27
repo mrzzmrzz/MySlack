@@ -25,7 +25,7 @@ import (
 	"github.com/mrzzmrzz/MySlack/slack"
 )
 
-const identifier = "io.github.mrzzmrzz.slack-mygo" // of mygo.json
+const identifier = "com.mrzz.myslack" // of mygo.json
 
 func main() {
 	team := flag.String("team", "", "name or domain of the workspace, when there are several")

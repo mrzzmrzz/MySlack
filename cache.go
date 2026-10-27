@@ -28,7 +28,7 @@ func defaultCacheDir() string {
 	if err != nil {
 		dir = os.TempDir()
 	}
-	return filepath.Join(dir, "io.github.mrzzmrzz.slack-mygo")
+	return filepath.Join(dir, "com.mrzz.myslack")
 }
 
 // imagePath is where the image at url is kept, by a hash of the URL.

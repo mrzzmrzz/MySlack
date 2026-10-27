@@ -1,6 +1,6 @@
 {
   "name": "MySlack",
-  "identifier": "io.github.mrzzmrzz.slack-mygo",
+  "identifier": "com.mrzz.myslack",
   "version": "0.1.2",
   "out": "build",
   "macos": {

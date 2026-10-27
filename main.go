@@ -695,6 +695,7 @@ func main() {
 	// than English beside the app's Chinese.
 	mygo.App.SetLanguages("zh-Hans")
 	mygo.App.WhenReady(func() {
+		migrateIdentifier()
 		a.settings = loadSettings()
 		mygo.App.SetMenu(a.menu())
 		// A made-up workspace for screenshots, or the session kept from

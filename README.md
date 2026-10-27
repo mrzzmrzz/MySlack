@@ -5,7 +5,7 @@ A lightweight, unofficial Slack client for macOS, written in Go with
 no JavaScript: the whole interface is drawn by MyGo on the GPU, styled after
 macOS 27.
 
-![Slack-MyGo](docs/screenshot.png)
+![Slack-MyGo](docs/main.png)
 
 ## Features
 
@@ -25,7 +25,7 @@ macOS 27.
   notifications
 - Session kept in the macOS Keychain
 
-![Reactions](docs/reactions.png)
+![A thread beside the channel](docs/thread.png)
 
 ## Install
 
@@ -72,6 +72,9 @@ go tool mygo dev      # run with live reload
 CGO_ENABLED=0 go test ./...
 go tool mygo build    # build/darwin-<arch>/Slack-MyGo.app and its .dmg
 ```
+
+`SLACK_MYGO_DEMO=1` starts the app on a made-up workspace, offline, as in the
+screenshots; `SLACK_MYGO_DEMO=thread` opens a thread too.
 
 The code is small:
 

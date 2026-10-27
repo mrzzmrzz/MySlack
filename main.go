@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
@@ -690,8 +691,15 @@ func main() {
 			}},
 			{Role: mygo.RoleWindowMenu},
 		}))
-		// Sign in again with the session kept from last time.
-		if data, err := mygo.Secrets.Get(secretKey); err == nil {
+		// A made-up workspace for screenshots, or the session kept from
+		// last time.
+		demo, isDemo := os.LookupEnv("SLACK_MYGO_DEMO")
+		stateKey := "main"
+		if isDemo {
+			a.settings = defaultSettings()
+			a.loadDemo(demo)
+			stateKey = "" // the window's default size
+		} else if data, err := mygo.Secrets.Get(secretKey); err == nil {
 			var s session
 			if json.Unmarshal(data, &s) == nil && s.Token != "" {
 				defer a.signIn(s.Token, s.Cookie, false)
@@ -705,7 +713,7 @@ func main() {
 			Height:    720,
 			MinWidth:  720,
 			MinHeight: 460,
-			StateKey:  "main",
+			StateKey:  stateKey,
 			// The traffic lights sit over the sidebar, whose material is
 			// the system's.
 			TitleBarStyle:  mygo.TitleBarHiddenInset,

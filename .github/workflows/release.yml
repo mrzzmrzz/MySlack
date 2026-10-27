@@ -74,12 +74,12 @@ jobs:
           echo "signed=true" >> "$GITHUB_OUTPUT"
 
       - name: Build the disk image
-        run: go tool mygo build -platform darwin/universal
+        run: go tool mygo build -platform darwin/arm64
 
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          dmg="$(ls build/darwin-universal/*.dmg)"
+          dmg="$(ls build/darwin-arm64/*.dmg)"
           gh release create "$GITHUB_REF_NAME" "$dmg" --title "MySlack $GITHUB_REF_NAME" --generate-notes \
             || gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber

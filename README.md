@@ -17,7 +17,7 @@ with its channels open:
 | Memory, idle | **85 MB** (the Memory column of Activity Monitor; 120 MB right after loading, before the graphics buffers are released) |
 | CPU, idle | 0.0–0.1% |
 | Processes | 1, with 22 threads |
-| App size | 25 MB universal app, 8.6 MB disk image |
+| App size | 14 MB app, 5.3 MB disk image (Apple Silicon) |
 
 Measured with `footprint` and `top`. Memory grows with the channels opened
 (their last 100 messages each) and the avatars and pictures loaded.
@@ -82,12 +82,12 @@ and the `d` cookie that goes with it.
 
 ## Build
 
-Requires Go 1.27.3 or later, on macOS.
+Requires Go 1.27.3 or later, on an Apple Silicon Mac.
 
 ```sh
 go tool mygo dev      # run with live reload
 CGO_ENABLED=0 go test ./...
-go tool mygo build    # build/darwin-<arch>/MySlack.app and its .dmg
+go tool mygo build -platform darwin/arm64  # build/darwin-arm64/MySlack.app and its .dmg
 ```
 
 `SLACK_MYGO_DEMO=1` starts the app on a made-up workspace, offline, as in the
@@ -106,8 +106,8 @@ The code is small:
 
 ## Releases
 
-Pushing a tag `v<version>` matching `version` in `mygo.json` builds a
-universal disk image and publishes it as a GitHub release.
+Pushing a tag `v<version>` matching `version` in `mygo.json` builds an
+Apple Silicon disk image and publishes it as a GitHub release.
 
 ## License
 

@@ -153,11 +153,17 @@ Every Mac app has these, and so must this one (see `keys.go`):
   a window.
 - Keyboard shortcuts as macOS writes them: ⌘K, ⌃⌘S, ⌘,.
 
+## Build target
+
+Build and release **Apple Silicon only** (`darwin/arm64`). Do not build
+Intel/x86_64 or universal binaries. CI and release artifacts are under
+`build/darwin-arm64/`.
+
 ## Checking a change
 
 - `go vet ./... && go tool mygo vet . && CGO_ENABLED=0 go test ./...`.
 - Look at the real window, in light and dark: build with
-  `go tool mygo build`, open the app and capture it with
+  `go tool mygo build -platform darwin/arm64`, open the app and capture it with
   `screencapture -o -l <window id>`. Offscreen renders (`ui.Tester.Image`)
   show layout but neither the system's materials nor its menus.
 - The README's screenshots come from a made-up workspace, never a real one.

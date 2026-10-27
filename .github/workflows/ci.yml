@@ -20,9 +20,9 @@ jobs:
       - name: Test
         run: CGO_ENABLED=0 go test ./...
       - name: Build the disk image
-        run: go tool mygo build -platform darwin/universal -skip-notarize
+        run: go tool mygo build -platform darwin/arm64 -skip-notarize
       - uses: actions/upload-artifact@v5
         with:
           name: MySlack-dmg
-          path: build/darwin-universal/*.dmg
+          path: build/darwin-arm64/*.dmg
           if-no-files-found: error

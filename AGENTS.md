@@ -100,6 +100,27 @@ the platform.
 - Settings is its own window (⌘,), with tabs at the top and grouped rows of
   a label and a control, as System Settings.
 
+### Keyboard and menus
+
+Every Mac app has these, and so must this one (see `keys.go`):
+
+| Menu | Items |
+|---|---|
+| App | About, 设置… ⌘,, Services, Hide ⌘H, Hide Others ⌥⌘H, Show All, Quit ⌘Q |
+| 文件 | Close Window ⌘W (`RoleClose`) |
+| Edit | the system's (`RoleEditMenu`): undo, redo, cut, copy, paste, select all |
+| 显示 | 显示或隐藏边栏 ⌃⌘S; 放大 ⌘+, 缩小 ⌘−, 实际大小 ⌘0 (the text size); full screen ⌃⌘F |
+| 前往 | 上一个会话 ⌥↑, 下一个会话 ⌥↓, 下一个未读会话 ⌥⇧↓ |
+| Window | the system's (`RoleWindowMenu`): minimize ⌘M, zoom, bring all to front |
+
+- ⌘W **hides** the main window rather than closing it, as Messages and
+  Mail: the app stays connected and notifies, and a click on its Dock icon
+  shows the same window again. Quitting (⌘Q) still closes it.
+- Escape closes what is transient: a thread, a reply, an edit, a popover.
+- Menu items run their work through `win.Update`, on the main thread.
+- New commands go in a menu with their shortcut, never as a hidden key
+  alone, so the menu bar teaches them.
+
 ### Words
 
 - Simplified Chinese, in the words macOS uses: 拷贝 not 复制 for the

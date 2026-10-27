@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -133,5 +134,30 @@ func TestProfile(t *testing.T) {
 	}
 	if a.selected != "D1" || a.profileOpen {
 		t.Errorf("selected %q, profile open %v", a.selected, a.profileOpen)
+	}
+}
+
+// ⌥↑ and ⌥↓ move through the conversations in the sidebar's order,
+// wrapping around; ⌥⇧↓ skips to the next unread one.
+func TestStep(t *testing.T) {
+	a := newApp()
+	a.auth = &slack.Auth{UserID: "U0"}
+	for _, id := range []string{"C1", "C2", "C3"} {
+		a.channels[id] = &channel{Channel: slack.Channel{ID: id, Name: strings.ToLower(id)}, loaded: true}
+	}
+	a.selected = "C1"
+	a.step(1, false)
+	if a.selected != "C2" {
+		t.Errorf("down from c1: %q", a.selected)
+	}
+	a.step(-1, false)
+	a.step(-1, false)
+	if a.selected != "C3" {
+		t.Errorf("up twice from c2, wrapping: %q", a.selected)
+	}
+	a.selected, a.channels["C3"].unread = "C1", true
+	a.step(1, true)
+	if a.selected != "C3" || a.channels["C3"].unread {
+		t.Errorf("next unread from c1: %q", a.selected)
 	}
 }

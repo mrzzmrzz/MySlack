@@ -670,31 +670,7 @@ func main() {
 	a := newApp()
 	mygo.App.WhenReady(func() {
 		a.settings = loadSettings()
-		mygo.App.SetMenu(mygo.NewMenu([]*mygo.MenuItem{
-			{Label: "Slack-MyGo", Submenu: []*mygo.MenuItem{
-				{Role: mygo.RoleAbout},
-				mygo.Separator(),
-				{Label: "设置…", Accelerator: "CmdOrCtrl+,", Click: func(*mygo.MenuItem, *mygo.Window) { a.openSettings() }},
-				mygo.Separator(),
-				{Role: mygo.RoleServices},
-				mygo.Separator(),
-				{Role: mygo.RoleHide},
-				{Role: mygo.RoleHideOthers},
-				{Role: mygo.RoleUnhide},
-				mygo.Separator(),
-				{Role: mygo.RoleQuit},
-			}},
-			{Role: mygo.RoleEditMenu},
-			{Label: "显示", Submenu: []*mygo.MenuItem{
-				{Label: "显示或隐藏边栏", Accelerator: "Ctrl+Cmd+S", Click: func(*mygo.MenuItem, *mygo.Window) {
-					a.sidebarHidden = !a.sidebarHidden
-					a.win.Invalidate()
-				}},
-				mygo.Separator(),
-				{Role: mygo.RoleToggleFullScreen},
-			}},
-			{Role: mygo.RoleWindowMenu},
-		}))
+		mygo.App.SetMenu(a.menu())
 		// A made-up workspace for screenshots, or the session kept from
 		// last time.
 		demo, isDemo := os.LookupEnv("SLACK_MYGO_DEMO")
@@ -725,6 +701,7 @@ func main() {
 			Vibrancy:       mygo.VibrancySidebar,
 			Content:        ui.View(a.view),
 		})
+		a.keepRunning()
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)

@@ -177,11 +177,9 @@ func (a *app) signInView(c *ui.Context) {
 
 // Sidebar
 
-// sidebar is the conversations under the traffic lights, and the user
-// at its foot.
-func (a *app) sidebar(c *ui.Context) {
-	t := c.Theme()
-	var rooms, dms []*channel
+// conversations are the channels, then the direct messages, each by name,
+// in the order the sidebar lists them.
+func (a *app) conversations() (rooms, dms []*channel) {
 	for _, ch := range a.channels {
 		if ch.IsIM || ch.IsMPIM {
 			if ch.IsIM && a.users[ch.User] != nil && a.users[ch.User].Deleted {
@@ -197,6 +195,14 @@ func (a *app) sidebar(c *ui.Context) {
 	}
 	slices.SortFunc(rooms, byTitle)
 	slices.SortFunc(dms, byTitle)
+	return rooms, dms
+}
+
+// sidebar is the conversations under the traffic lights, and the user
+// at its foot.
+func (a *app) sidebar(c *ui.Context) {
+	t := c.Theme()
+	rooms, dms := a.conversations()
 
 	ui.Box(c).Height(titleBarHeight).Shrink(0).DragWindow()
 	ui.Column(c).Grow(1).MinHeight(0).Children(func() {

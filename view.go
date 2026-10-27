@@ -292,24 +292,16 @@ func (a *app) account(c *ui.Context) {
 
 var chevronIcon = icon(`<path d="M5 6.5 8 3.5l3 3M5 9.5l3 3 3-3"/>`)
 
-// toolbarButton is a borderless button holding an icon, as in macOS's
-// sidebars and inspectors.
+// toolbarButton is a borderless button holding an icon, round, as the
+// buttons of macOS 27's toolbars are, and so concentric with the capsules
+// that hold it.
 func (a *app) toolbarButton(c *ui.Context, svg *ui.SVG, label string) ui.Element {
 	t := c.Theme()
-	b := ui.ButtonBase(c).Size(28, 28).Radius(7).Center().Label(label).Tooltip(label).TextColor(t.TextMuted)
+	b := ui.ButtonBase(c).Size(28, 28).Radius(14).Center().Label(label).Tooltip(label).TextColor(t.TextMuted)
 	if b.Hovered() {
 		b.Background(t.SurfaceHover).TextColor(t.Text)
 	}
 	b.Children(func() { ui.Icon(c, svg).Size(16, 16) })
-	return b
-}
-
-// glassButton is a round button of glass holding an icon.
-func (a *app) glassButton(c *ui.Context, svg *ui.SVG, label string, size float32) ui.Element {
-	t := c.Theme()
-	b := ui.ButtonBase(c).Size(size, size).Radius(size / 2).Center().Label(label).Tooltip(label).
-		Cursor(ui.CursorPointer).Material(glass.Glass{Interactive: true}).TextColor(t.Text)
-	b.Children(func() { ui.Icon(c, svg).Size(size*0.5, size*0.5) })
 	return b
 }
 
@@ -565,7 +557,7 @@ var frequent = []string{"+1", "heart", "joy", "tada", "eyes", "pray", "white_che
 // actions float over the top corner of the message under the pointer, as
 // Slack's: react, and reply in a thread.
 func (a *app) actions(c *ui.Context, ch *channel, m *slack.Message, threads bool) {
-	ui.Row(c).Absolute().Top(-14).Right(14).Gap(2).Padding(3).Radius(12).Material(glass.Glass{}).
+	ui.Row(c).Absolute().Top(-16).Right(14).Gap(2).Padding(3).Radius(17).AlignItems(ui.Center).Material(glass.Glass{}).
 		Shadow(0, 2, 10, 0, ui.RGBA(0, 0, 0, 0.1)).Children(func() {
 		react := a.actionButton(c.Key("react"), smileIcon, "添加表情")
 		if react.Clicked() {
@@ -587,7 +579,7 @@ func (a *app) actions(c *ui.Context, ch *channel, m *slack.Message, threads bool
 
 func (a *app) actionButton(c *ui.Context, svg *ui.SVG, label string) ui.Element {
 	t := c.Theme()
-	b := ui.ButtonBase(c).Size(28, 26).Radius(9).Center().Label(label).Tooltip(label).Cursor(ui.CursorPointer).TextColor(t.TextMuted)
+	b := ui.ButtonBase(c).Size(28, 28).Radius(14).Center().Label(label).Tooltip(label).Cursor(ui.CursorPointer).TextColor(t.TextMuted)
 	if b.Hovered() {
 		b.Background(t.SurfaceHover).TextColor(t.Text)
 	}

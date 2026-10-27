@@ -2,5 +2,8 @@
   "name": "Slack-MyGo",
   "identifier": "io.github.mrzzmrzz.slack-mygo",
   "version": "0.1.1",
-  "out": "build"
+  "out": "build",
+  "macos": {
+    "icon": "AppIcon.icon"
+  }
 }

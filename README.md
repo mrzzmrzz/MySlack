@@ -7,6 +7,21 @@ macOS 27.
 
 ![Slack-MyGo](docs/main.png)
 
+## Footprint
+
+One process, measured on an Apple Silicon Mac, signed in to a real workspace
+with its channels open:
+
+| | |
+|---|---|
+| Memory, idle | **85 MB** (the Memory column of Activity Monitor; 120 MB right after loading, before the graphics buffers are released) |
+| CPU, idle | 0.0–0.1% |
+| Processes | 1, with 22 threads |
+| App size | 25 MB universal app, 8.6 MB disk image |
+
+Measured with `footprint` and `top`. Memory grows with the channels opened
+(their last 100 messages each) and the avatars and pictures loaded.
+
 ## Features
 
 - Channels, private channels, direct and group messages, in a sidebar of the

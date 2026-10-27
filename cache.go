@@ -10,7 +10,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mrzzmrzz/Slack-MyGo/slack"
+	"github.com/mrzzmrzz/MySlack/slack"
 )
 
 // The cache keeps what the app fetched, so that it shows again at once and

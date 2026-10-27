@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mrzzmrzz/Slack-MyGo/slack"
+	"github.com/mrzzmrzz/MySlack/slack"
 )
 
 // loadDemo fills the app with a workspace of made-up people and messages,
@@ -45,7 +45,7 @@ func (a *app) loadDemo(mode string) {
 		slack.Message{User: "U03", TS: at(today, 9, 41), ReplyCount: 3,
 			Text:      "Release checklist for *v0.2* :rocket:\n• tag from `main`\n• let CI build the universal DMG\n• write the notes",
 			Reactions: []slack.Reaction{{Name: "rocket", Count: 4, Users: []string{"U00", "U01", "U02", "U04"}}, {Name: "eyes", Count: 1, Users: []string{"U05"}}}},
-		slack.Message{User: "U04", TS: at(today, 10, 15), Text: "Here is the config the build reads:\n```{\n  \"name\": \"Slack-MyGo\",\n  \"version\": \"0.2.0\"\n}```\n&gt; Keep the tag and this version in step."},
+		slack.Message{User: "U04", TS: at(today, 10, 15), Text: "Here is the config the build reads:\n```{\n  \"name\": \"MySlack\",\n  \"version\": \"0.2.0\"\n}```\n&gt; Keep the tag and this version in step."},
 		slack.Message{User: "U05", TS: at(today, 10, 32), Text: "Spec for the new composer, comments welcome <@U00>",
 			Files: []slack.File{{ID: "F01", Name: "composer-spec.pdf", Title: "composer-spec.pdf", Filetype: "PDF", Size: 2_400_000}}},
 		slack.Message{User: "U00", TS: at(today, 10, 41), Text: "Looks great, I'll take the keyboard shortcuts :sparkles:",

@@ -12,7 +12,7 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/mrzzmrzz/Slack-MyGo/slack"
+	"github.com/mrzzmrzz/MySlack/slack"
 )
 
 // download is a file of the workspace saved, or being saved, to the

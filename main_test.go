@@ -10,7 +10,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"github.com/mrzzmrzz/Slack-MyGo/slack"
+	"github.com/mrzzmrzz/MySlack/slack"
 )
 
 func TestSignInView(t *testing.T) {

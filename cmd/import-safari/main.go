@@ -1,4 +1,4 @@
-// Import-safari signs Slack-MyGo in with the session of Slack open in
+// Import-safari signs MySlack in with the session of Slack open in
 // Safari: it reads the d cookie and the xoxc token of app.slack.com,
 // checks them, and keeps them in the Keychain where the app looks.
 //
@@ -22,7 +22,7 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/mrzzmrzz/Slack-MyGo/slack"
+	"github.com/mrzzmrzz/MySlack/slack"
 )
 
 const identifier = "io.github.mrzzmrzz.slack-mygo" // of mygo.json
@@ -63,7 +63,7 @@ func main() {
 	if err := mygo.Secrets.Service(identifier).Set("session", data); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("signed in as %s on %s; open Slack-MyGo\n", auth.User, auth.Team)
+	fmt.Printf("signed in as %s on %s; open MySlack\n", auth.User, auth.Team)
 }
 
 // slackCookie reads the d cookie of .slack.com from Safari's cookie file.

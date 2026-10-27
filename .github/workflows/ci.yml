@@ -23,6 +23,6 @@ jobs:
         run: go tool mygo build -platform darwin/universal -skip-notarize
       - uses: actions/upload-artifact@v5
         with:
-          name: Slack-MyGo-dmg
+          name: MySlack-dmg
           path: build/darwin-universal/*.dmg
           if-no-files-found: error

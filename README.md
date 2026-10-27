@@ -1,11 +1,11 @@
-# Slack-MyGo
+# MySlack
 
 A lightweight, unofficial Slack client for macOS, written in Go with
 [MyGo](https://github.com/egoist/mygo)'s native UI. No Electron, no web view,
 no JavaScript: the whole interface is drawn by MyGo on the GPU, styled after
 macOS 27.
 
-![Slack-MyGo](docs/main.png)
+![MySlack](docs/main.png)
 
 ## Footprint
 
@@ -47,8 +47,8 @@ Measured with `footprint` and `top`. Memory grows with the channels opened
 ## Install
 
 Download the disk image from the
-[latest release](https://github.com/mrzzmrzz/Slack-MyGo/releases/latest),
-open it and drag Slack-MyGo to Applications.
+[latest release](https://github.com/mrzzmrzz/MySlack/releases/latest),
+open it and drag MySlack to Applications.
 
 Releases built without a Developer ID are signed ad hoc: the first time,
 right-click the app and choose Open, or allow it under System Settings ›
@@ -56,7 +56,7 @@ Privacy & Security.
 
 ## Sign in
 
-Slack-MyGo signs in with the session of Slack's web client: an `xoxc-` token
+MySlack signs in with the session of Slack's web client: an `xoxc-` token
 and the `d` cookie that goes with it.
 
 - **From Safari**: sign in at [app.slack.com](https://app.slack.com) in
@@ -87,7 +87,7 @@ Requires Go 1.27.3 or later, on macOS.
 ```sh
 go tool mygo dev      # run with live reload
 CGO_ENABLED=0 go test ./...
-go tool mygo build    # build/darwin-<arch>/Slack-MyGo.app and its .dmg
+go tool mygo build    # build/darwin-<arch>/MySlack.app and its .dmg
 ```
 
 `SLACK_MYGO_DEMO=1` starts the app on a made-up workspace, offline, as in the

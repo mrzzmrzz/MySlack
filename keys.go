@@ -18,7 +18,7 @@ func (a *app) menu() *mygo.Menu {
 		}
 	}
 	return mygo.NewMenu([]*mygo.MenuItem{
-		{Label: "Slack-MyGo", Submenu: []*mygo.MenuItem{
+		{Label: "MySlack", Submenu: []*mygo.MenuItem{
 			{Role: mygo.RoleAbout},
 			mygo.Separator(),
 			{Label: "设置…", Accelerator: "CmdOrCtrl+,", Click: func(*mygo.MenuItem, *mygo.Window) { a.openSettings() }},

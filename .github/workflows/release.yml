@@ -81,5 +81,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           dmg="$(ls build/darwin-universal/*.dmg)"
-          gh release create "$GITHUB_REF_NAME" "$dmg" --title "Slack-MyGo $GITHUB_REF_NAME" --generate-notes \
+          gh release create "$GITHUB_REF_NAME" "$dmg" --title "MySlack $GITHUB_REF_NAME" --generate-notes \
             || gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber

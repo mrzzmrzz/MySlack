@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Guidance for agents and people changing this app. Slack-MyGo and its sibling
-Discord-MyGo share one design language: keep them alike.
+Guidance for agents and people changing this app. MySlack and its sibling
+MyDiscord share one design language: keep them alike.
 
 ## The aim
 

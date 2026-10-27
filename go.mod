@@ -1,4 +1,4 @@
-module github.com/mrzzmrzz/Slack-MyGo
+module github.com/mrzzmrzz/MySlack
 
 go 1.27.3
 

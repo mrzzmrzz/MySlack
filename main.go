@@ -9,9 +9,11 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/egoist/mygo"
+	_ "github.com/egoist/mygo/locales/zh-Hans" // MyGo's own texts in Chinese
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/markdown"
 
@@ -64,10 +66,15 @@ type app struct {
 	connected    bool
 	connErr      string
 
-	md        markdown.Options
-	services  ui.Services
-	images    map[string]*picture  // avatars and thumbnails by URL
-	downloads map[string]*download // files saved, by ID
+	md         markdown.Options
+	services   ui.Services
+	images     map[string]*picture  // avatars and thumbnails by URL
+	downloads  map[string]*download // files saved, by ID
+	cacheDir   string               // see cache.go
+	cacheBytes int64                // the cache's size as the settings last saw it, -1 unknown
+	measuring  bool
+	fetching   map[string]bool // files fetched to preview, by ID
+	previewing *pendingPreview // the preview waiting for its files
 
 	sidebarHidden bool
 	titleInset    float32 // of the toolbar's title, past the window's controls
@@ -101,6 +108,9 @@ func newApp() *app {
 		dmsOpen:      true,
 		images:       map[string]*picture{},
 		downloads:    map[string]*download{},
+		fetching:     map[string]bool{},
+		cacheDir:     defaultCacheDir(),
+		cacheBytes:   -1,
 		settings:     defaultSettings(),
 	}
 	a.md = markdown.Options{
@@ -111,15 +121,20 @@ func newApp() *app {
 	return a
 }
 
-// update publishes a goroutine's result; without a window, as in tests, it
-// applies it at once.
+// update publishes a goroutine's result on the main thread; without a
+// window, as in tests, it applies it at once, one goroutine at a time, as
+// the main thread would.
 func (a *app) update(fn func()) {
 	if a.win == nil {
+		updates.Lock()
+		defer updates.Unlock()
 		fn()
 		return
 	}
 	a.win.Update(fn)
 }
+
+var updates sync.Mutex
 
 // Sign-in
 
@@ -411,7 +426,7 @@ func (a *app) avatarURL(m *slack.Message) string {
 }
 
 // picture returns the image at url, starting to load it the first time
-// it is asked for; nil until it has loaded.
+// it is asked for, from the cache or from Slack; nil until it has loaded.
 func (a *app) picture(url string) *ui.Bitmap {
 	if url == "" || a.client == nil {
 		return nil
@@ -421,9 +436,16 @@ func (a *app) picture(url string) *ui.Bitmap {
 	}
 	p := &picture{}
 	a.images[url] = p
-	client := a.client
+	client, path := a.client, a.imagePath(url)
 	go func() {
-		data, err := client.Fetch(context.Background(), url)
+		// From the cache, else from Slack into the cache.
+		data, ok := cached(path)
+		var err error
+		if !ok {
+			if data, err = client.Fetch(context.Background(), url); err == nil {
+				keep(path, data)
+			}
+		}
 		var bmp *ui.Bitmap
 		if err == nil {
 			bmp, err = ui.DecodeBitmap(data)
@@ -668,6 +690,10 @@ func appendNew(ms []slack.Message, m slack.Message) []slack.Message {
 
 func main() {
 	a := newApp()
+	// The app is written in Simplified Chinese: the menus AppKit labels
+	// (Edit, Window, About, Quit) and MyGo's own controls say it too, rather
+	// than English beside the app's Chinese.
+	mygo.App.SetLanguages("zh-Hans")
 	mygo.App.WhenReady(func() {
 		a.settings = loadSettings()
 		mygo.App.SetMenu(a.menu())
@@ -702,6 +728,7 @@ func main() {
 			Content:        ui.View(a.view),
 		})
 		a.keepRunning()
+		go a.trimCache(cacheLimit)
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)

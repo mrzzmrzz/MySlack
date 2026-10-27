@@ -1,8 +1,12 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 
@@ -159,5 +163,58 @@ func TestStep(t *testing.T) {
 	a.step(1, true)
 	if a.selected != "C3" || a.channels["C3"].unread {
 		t.Errorf("next unread from c1: %q", a.selected)
+	}
+}
+
+// A click on a picture fetches it, and the others of its message, to show
+// them in Quick Look; the thumbnail shows a spinner meanwhile.
+func TestPreview(t *testing.T) {
+	// A server that holds each request until the test ends, as a slow
+	// download does.
+	hold := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-hold
+		w.WriteHeader(http.StatusServiceUnavailable) // and so writes no file
+	}))
+	defer srv.Close()
+	defer close(hold)
+	a := newApp()
+	a.cacheDir = t.TempDir()
+	a.auth = &slack.Auth{UserID: "U0"}
+	a.client = slack.New("xoxc-test", "d")
+	pic := func(id string) slack.File {
+		return slack.File{ID: id, Name: id + ".png", Thumb360: "thumb", Thumb360W: 360, Thumb360H: 200, URLPrivateDownload: srv.URL + "/" + id}
+	}
+	a.channels["C1"] = &channel{Channel: slack.Channel{ID: "C1", Name: "general"}, loaded: true,
+		messages: []slack.Message{{User: "U0", Text: "look", TS: "1.1", Files: []slack.File{pic("F1"), pic("F2")}}}}
+	a.selected = "C1"
+	tt := ui.NewTester(a.view, 1000, 700)
+	if err := tt.Click("F2.png"); err != nil {
+		t.Fatal(err)
+	}
+	if !a.fetching["F1"] || !a.fetching["F2"] || a.previewing == nil || a.previewing.index != 1 {
+		t.Errorf("fetching %v, previewing %+v", a.fetching, a.previewing)
+	}
+}
+
+// The cache keeps what was used last when it trims itself to its limit.
+func TestTrimCache(t *testing.T) {
+	a := newApp()
+	a.cacheDir = t.TempDir()
+	old, recent := a.imagePath("https://x/old"), a.imagePath("https://x/recent")
+	keep(old, make([]byte, 600))
+	keep(recent, make([]byte, 600))
+	past := time.Now().Add(-time.Hour)
+	os.Chtimes(old, past, past)
+	a.trimCache(1000)
+	if _, err := os.Stat(old); !os.IsNotExist(err) {
+		t.Error("the file used least recently is left")
+	}
+	if data, ok := cached(recent); !ok || len(data) != 600 {
+		t.Error("the file used last is gone")
+	}
+	a.clearCache()
+	if a.cacheSize() != 0 {
+		t.Error("the cache is not empty after clearing it")
 	}
 }

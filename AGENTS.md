@@ -121,8 +121,29 @@ Every Mac app has these, and so must this one (see `keys.go`):
 - New commands go in a menu with their shortcut, never as a hidden key
   alone, so the menu bar teaches them.
 
+### Files and pictures
+
+- A click on a picture or a file shows it in **Quick Look**, as Messages
+  does (`quicklook_darwin.go`, the system's `QLPreviewPanel`): zoom, full
+  screen, Open with Preview, share, and the arrows between the pictures of
+  the message. Never an in-app viewer of our own.
+- Previewing never writes to the user's Downloads. Saving there is an
+  explicit act: the card's button, or 存储到“下载” in the right-click menu,
+  which also offers 快速查看, 在访达中显示 and 拷贝链接.
+- What the app fetches lives in its **cache**, `~/Library/Caches/<bundle
+  id>/`: `images/` for avatars and thumbnails (by a hash of the URL),
+  `files/` for files previewed. It is trimmed to 500 MB, least recently used
+  first, and 设置 › 通用 › 存储 shows its size and clears it. Nothing the app
+  cannot fetch again goes there.
+
 ### Words
 
+- The app declares it is written in Simplified Chinese
+  (`mygo.App.SetLanguages("zh-Hans")` and
+  `import _ "github.com/egoist/mygo/locales/zh-Hans"`), so the menus AppKit
+  labels (编辑, 窗口, 关于, 退出) and MyGo's controls are Chinese too; the menu
+  bar never mixes languages. Use the system's standard menus and roles, and
+  the system's names for the menus the app adds (文件, 显示, 前往).
 - Simplified Chinese, in the words macOS uses: 拷贝 not 复制 for the
   clipboard, 存储 for saving an edit, 设置… with the ellipsis when it opens
   a window.

@@ -673,47 +673,77 @@ func (a *app) replies(c *ui.Context, ch *channel, m *slack.Message) {
 	})
 }
 
-// files shows a message's pictures as thumbnails, which open in Preview,
-// and its other files as cards that download them.
+// files shows a message's pictures as thumbnails and its other files as
+// cards. A click shows them in Quick Look, as Messages does; saving to
+// Downloads is the card's button and the menu's.
 func (a *app) files(c *ui.Context, m *slack.Message) {
 	t := c.Theme()
 	if len(m.Files) == 0 {
 		return
 	}
+	var pictures []slack.File
+	for _, f := range m.Files {
+		if f.Thumb360 != "" && f.Thumb360W > 0 {
+			pictures = append(pictures, f)
+		}
+	}
 	ui.Row(c).Wrap().Gap(8).Children(func() {
-		for _, f := range m.Files {
-			if f.Thumb360 != "" && f.Thumb360W > 0 {
-				w, h := float32(f.Thumb360W), float32(f.Thumb360H)
-				if h > 240 {
-					w, h = w*240/h, 240
-				}
-				b := ui.ButtonBase(c.Key("file:"+f.ID)).Size(w, h).Radius(12).Clip().Label(f.Name).Tooltip(f.Name).Cursor(ui.CursorPointer)
-				b.Children(func() {
-					if p := a.picture(f.Thumb360); p != nil {
-						ui.Image(c, p).Size(w, h)
-					} else {
-						ui.Box(c).Size(w, h).Background(t.Surface)
-					}
-					ui.Box(c).Absolute().Top(0).Left(0).Right(0).Bottom(0).Radius(12).Border(1, t.Border.Alpha(0.5)).PassThrough()
-					if d := a.downloads[f.ID]; d != nil && !d.finished && d.err == "" {
-						ui.Box(c).Absolute().Left(10).Right(10).Bottom(10).Children(func() {
-							ui.Progress(c, fraction(d))
-						})
-					}
-				})
-				if b.Clicked() {
-					a.downloadFile(f, true)
-				}
-				continue
+		for i, f := range pictures {
+			w, h := float32(f.Thumb360W), float32(f.Thumb360H)
+			if h > 240 {
+				w, h = w*240/h, 240
 			}
-			a.fileCard(c, f)
+			b := ui.ButtonBase(c.Key("file:"+f.ID)).Size(w, h).Radius(12).Clip().Label(f.Name).Tooltip(f.Name).Cursor(ui.CursorPointer)
+			b.Children(func() {
+				if p := a.picture(f.Thumb360); p != nil {
+					ui.Image(c, p).Size(w, h)
+				} else {
+					ui.Box(c).Size(w, h).Background(t.Surface)
+				}
+				ui.Box(c).Absolute().Top(0).Left(0).Right(0).Bottom(0).Radius(12).Border(1, t.Border.Alpha(0.5)).PassThrough()
+				if a.fetching[f.ID] {
+					ui.Box(c).Absolute().Top(0).Left(0).Right(0).Bottom(0).Center().Background(ui.RGBA(0, 0, 0, 0.25)).Children(func() {
+						ui.Spinner(c)
+					})
+				}
+			})
+			if b.Clicked() {
+				a.preview(pictures, i)
+			}
+			b.ContextMenu(func(menu *ui.Menu) { a.fileMenu(c, menu, pictures, i) })
+		}
+		for _, f := range m.Files {
+			if f.Thumb360 == "" || f.Thumb360W == 0 {
+				a.fileCard(c, f)
+			}
 		}
 	})
 }
 
-// fileCard is a file as Finder's list shows one: its kind, name and size,
-// or how much of it has come. A click saves it to Downloads, or opens it
-// once saved.
+// fileMenu is what a right-click on a file offers.
+func (a *app) fileMenu(c *ui.Context, menu *ui.Menu, files []slack.File, i int) {
+	f := files[i]
+	if menu.Item("快速查看").Chosen() {
+		a.preview(files, i)
+	}
+	if menu.Item("存储到“下载”").Chosen() {
+		a.downloadFile(f, false)
+	}
+	if d := a.downloads[f.ID]; d != nil && d.finished {
+		if menu.Item("在访达中显示").Chosen() {
+			a.revealFile(d.path)
+		}
+	}
+	menu.Separator()
+	if menu.Item("拷贝链接").Disabled(f.Permalink == "").Chosen() {
+		a.services.WriteClipboard(f.Permalink)
+		c.Toast("已拷贝链接")
+	}
+}
+
+// fileCard is a file as Finder's list shows one: its kind, name and size.
+// A click shows it in Quick Look; its button saves it to Downloads, then
+// shows it in Finder.
 func (a *app) fileCard(c *ui.Context, f slack.File) {
 	t := c.Theme()
 	d := a.downloads[f.ID]
@@ -730,13 +760,17 @@ func (a *app) fileCard(c *ui.Context, f slack.File) {
 		card.Children(func() {
 			ui.Row(c).Grow(1).Gap(10).AlignItems(ui.Center).Children(func() {
 				ui.Box(c).Size(32, 32).Radius(7).Center().Background(t.Accent.Alpha(0.12)).Children(func() {
-					ui.Icon(c, docIcon).Size(18, 18).TextColor(t.Accent)
+					if a.fetching[f.ID] {
+						ui.Spinner(c).Size(16, 16)
+					} else {
+						ui.Icon(c, docIcon).Size(18, 18).TextColor(t.Accent)
+					}
 				})
 				ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
 					ui.Text(c, name).FontWeight(500).SingleLine()
 					switch {
 					case d != nil && d.err != "":
-						ui.Text(c, "下载失败，点按重试").FontSize(11).TextColor(t.Danger).Tooltip(d.err)
+						ui.Text(c, "存储失败").FontSize(11).TextColor(t.Danger).Tooltip(d.err)
 					case d != nil && !d.finished:
 						ui.Progress(c, fraction(d))
 					default:
@@ -745,25 +779,26 @@ func (a *app) fileCard(c *ui.Context, f slack.File) {
 							kind += " · " + s
 						}
 						if d != nil && d.finished {
-							kind = "已下载 · 点按打开"
+							kind = "已存储到“下载”"
 						}
 						ui.Text(c, kind).FontSize(11).TextColor(t.TextMuted).SingleLine()
 					}
 				})
-				if d == nil || d.err != "" {
-					ui.Icon(c, downloadIcon).Size(16, 16).TextColor(t.TextMuted)
-				}
 			})
 		})
 		if card.Clicked() {
-			if d != nil && d.err != "" {
-				delete(a.downloads, f.ID)
-			}
-			a.downloadFile(f, false)
+			a.preview([]slack.File{f}, 0)
 		}
-		if d != nil && d.finished {
-			if a.toolbarButton(c.Key("reveal:"+f.ID), revealIcon, "在 Finder 中显示").Clicked() {
+		card.ContextMenu(func(menu *ui.Menu) { a.fileMenu(c, menu, []slack.File{f}, 0) })
+		switch {
+		case d != nil && d.finished:
+			if a.toolbarButton(c.Key("reveal:"+f.ID), revealIcon, "在访达中显示").Clicked() {
 				a.revealFile(d.path)
+			}
+		case d == nil || d.err != "":
+			if a.toolbarButton(c.Key("save:"+f.ID), downloadIcon, "存储到“下载”").Clicked() {
+				delete(a.downloads, f.ID)
+				a.downloadFile(f, false)
 			}
 		}
 	})

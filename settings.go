@@ -85,6 +85,7 @@ func (a *app) openSettings() {
 		a.settingsWin.Focus()
 		return
 	}
+	a.cacheBytes = -1
 	a.settingsWin = mygo.NewWindow(mygo.WindowOptions{
 		Title:           "设置",
 		Width:           540,
@@ -180,6 +181,23 @@ func (a *app) generalSettings(c *ui.Context) {
 			}
 		})
 	})
+	group(c, "存储", func() {
+		used := "正在计算…"
+		switch {
+		case a.cacheBytes == 0:
+			used = "没有缓存"
+		case a.cacheBytes > 0:
+			used = size(a.cacheBytes)
+		}
+		row(c, "缓存", "头像、缩略图和预览过的文件，"+used, func() {
+			if ui.Button(c, "清除缓存").Disabled(a.cacheBytes <= 0).Clicked() {
+				a.clearCache()
+				a.cacheBytes = 0
+				c.Toast("已清除缓存")
+			}
+		})
+	})
+	a.measureCache()
 	group(c, "发送消息", func() {
 		row(c, "用 ⌘↩ 发送", "打开后 ↩ 换行；关闭时 ↩ 发送、⇧↩ 换行", func() {
 			if ui.Switch(c, &s.CmdEnter).Label("用 ⌘↩ 发送").Changed() {
@@ -294,4 +312,22 @@ func row(c *ui.Context, label, note string, control func()) {
 
 func separator(c *ui.Context) {
 	ui.Box(c).Height(1).Margin(0, 14).Background(c.Theme().Border.Alpha(0.6))
+}
+
+// measureCache works out the cache's size for the settings, once each time
+// they show it.
+func (a *app) measureCache() {
+	if a.cacheBytes >= 0 || a.measuring {
+		return
+	}
+	a.measuring = true
+	go func() {
+		n := a.cacheSize()
+		a.update(func() {
+			a.cacheBytes, a.measuring = n, false
+			if a.settingsWin != nil {
+				a.settingsWin.Invalidate()
+			}
+		})
+	}()
 }

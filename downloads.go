@@ -134,3 +134,65 @@ func size(n int64) string {
 	}
 	return fmt.Sprintf("%.2f GB", float64(n)/1e9)
 }
+
+// preview shows files in Quick Look, the one at index first, as Messages
+// does when a picture is clicked; those not yet fetched are fetched to the
+// cache first, while their thumbnails show a spinner.
+func (a *app) preview(files []slack.File, index int) {
+	a.previewing = &pendingPreview{files: files, index: index}
+	for _, f := range files {
+		path := a.filePath(f)
+		if _, err := os.Stat(path); err == nil || a.fetching[f.ID] || a.client == nil || f.URLPrivateDownload == "" {
+			continue
+		}
+		a.fetching[f.ID] = true
+		os.MkdirAll(filepath.Dir(path), 0o755)
+		client, url := a.client, f.URLPrivateDownload
+		go func() {
+			err := client.Download(context.Background(), url, path, func(int64, int64) {})
+			a.update(func() {
+				delete(a.fetching, f.ID)
+				if err != nil {
+					log.Printf("preview %s: %v", f.Name, err)
+				}
+				a.showPreview()
+			})
+		}()
+	}
+	a.showPreview()
+}
+
+type pendingPreview struct {
+	files []slack.File
+	index int
+}
+
+// showPreview opens the preview asked for once its files are fetched.
+func (a *app) showPreview() {
+	p := a.previewing
+	if p == nil {
+		return
+	}
+	var paths []string
+	index := 0
+	for i, f := range p.files {
+		if a.fetching[f.ID] {
+			return // still coming
+		}
+		path := a.filePath(f)
+		if _, err := os.Stat(path); err != nil {
+			continue // failed: preview the others
+		}
+		if i == p.index {
+			index = len(paths)
+		}
+		paths = append(paths, path)
+	}
+	a.previewing = nil
+	if len(paths) == 0 || a.win == nil {
+		return
+	}
+	if !quickLook(paths, index) {
+		a.openFile(paths[index])
+	}
+}
